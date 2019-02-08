@@ -372,3 +372,19 @@ fragment float4 luminosityBlend(VertexOut vertexIn [[ stage_in ]],
     return mix(uCb,blendedColor,intensity);
 }
 
+fragment float4 chromaKeyBlend(
+                               VertexOut vertexIn [[stage_in]],
+                               texture2d<float, access::sample> sourceTexture [[texture(0)]],
+                               sampler sourceSampler [[sampler(0)]],
+                               constant float4 &color [[buffer(0)]],
+                               constant float &thresholdSensitivity [[buffer(1)]]) {
+    float4 textureColor = sourceTexture.sample(sourceSampler, vertexIn.textureCoordinate);
+    if (textureColor.a < 1) {
+        return textureColor;
+    }
+    float4 difColor = color * thresholdSensitivity;
+    float4 minColor = max(0, color - difColor);
+    float4 maxColor = min(1, color + difColor);
+    return float4(textureColor.r,textureColor.g,textureColor.b, (textureColor <= maxColor && textureColor >= minColor) ? 0 : 1)
+}
+
